@@ -8,6 +8,7 @@ from PyQt5.QtCore import Qt, QVariantAnimation, QVariant, pyqtSlot, QEasingCurve
 from client import queue, client
 import threading
 from game_data import GameData
+from gui.main_widgets import QBigWidgets
 from gui.qcard import QCard, QPlayerDeck
 from gui.QLoginDialog import QLoginDialog
 from gui.qwonder import QWonder
@@ -59,6 +60,7 @@ class GameGUI(QDialog):
         self.stats.show()
 
         self.player_deck = QPlayerDeck(self)
+        self.big_widgets = QBigWidgets(self)
 
     @staticmethod
     def send_game_data_req():
@@ -69,6 +71,7 @@ class GameGUI(QDialog):
 
     def send_build_req(self):
         game_data.send_build_req(self.pane.index)
+        self.big_widgets.start_waiting()
 
     def send_card_details(self, index):
         game_data.send_card_details_req(index)
@@ -80,6 +83,7 @@ class GameGUI(QDialog):
 
     def new_move(self, player, left, right):
         print("Built IDs", player, left, right)
+        self.big_widgets.stop_waiting()
         self.player_deck.build_card(player)
 
     def card_details(self, res):

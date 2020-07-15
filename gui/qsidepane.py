@@ -1,5 +1,6 @@
+from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QPoint
-from PyQt5.QtGui import QPixmap, QImage, QTransform
+from PyQt5.QtGui import QPixmap, QImage, QTransform, QColor, QMovie
 from PyQt5.QtWidgets import QLabel, QDialogButtonBox, QPushButton
 
 OFFSET = 700
@@ -83,13 +84,15 @@ class QResource(QLabel):
         super(QResource, self).__init__(parent)
         self.parent1 = parent
 
-        self.setStyleSheet("QResource {background-image: url(brown_texture.jpg); background-attachment: fixed; background-position: center;}")
-
+        # self.setStyleSheet("QResource {background-color: transparent;}")
+        self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.setStyleSheet("background:transparent;")
 
         if res is None:
             return
 
-        # src_img = QImage(f'res/{res}.png').scaledToHeight(30)
+        src_img = QImage(f'res/{res}.png').scaledToHeight(30)
         dst_pix = QPixmap(f'res/{res}.png').scaledToHeight(30)
 
         self.setPixmap(dst_pix)
