@@ -1,3 +1,5 @@
+import sys
+
 from PyQt5.QtGui import QPalette, QColor, QPixmap, QResizeEvent, QTransform, QIcon
 from PyQt5.QtWidgets import QApplication, QDialog, QGridLayout, QCheckBox, QStyleFactory, QTextEdit, QPushButton, \
     QGroupBox, QVBoxLayout, QHBoxLayout, QRadioButton, QLineEdit, QLabel, QSlider, QWidget, QDateTimeEdit, \
@@ -14,32 +16,25 @@ from gui.QLoginDialog import QLoginDialog
 from gui.qwonder import QWonder
 from gui.qstats import QStats
 from gui.qsidepane import SidePane
+from gui.topbar import QTopBar
 
 OFFSET = 700
 
 
 class GameGUI(QDialog):
-    queue_text = pyqtSignal(int)
+    queue_text = pyqtSignal(list)
     wonder_signal = pyqtSignal(int)
     game_update_signal = pyqtSignal(int)
-    new_move_signal = pyqtSignal(int, int, int)
-    card_details_signal = pyqtSignal(list)
+    new_move_signal = pyqtSignal(int, int, int, list)
+    card_details_signal = pyqtSignal(list, list)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, game_data=None):
         super(GameGUI, self).__init__(parent)
         self.setWindowTitle("7 CUDÓW ŚWIATA")
         QApplication.setStyle(QStyleFactory.create('windows'))
         self.setMinimumSize(1024, 768)
         self.setMaximumSize(1024, 768)
         self.setStyleSheet("background-image: url(bg.jpg); background-attachment: fixed; background-position: center;")
-
-        # OK and Cancel buttons
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel,
-            Qt.Horizontal, self)
-        buttons.accepted.connect(self.send_get_move_req)
-        buttons.rejected.connect(self.send_build_req)
-        buttons.move(OFFSET + 60, 480)
 
         self.pane = SidePane(self)
 
@@ -60,7 +55,14 @@ class GameGUI(QDialog):
         self.stats.show()
 
         self.player_deck = QPlayerDeck(self)
-        self.big_widgets = QBigWidgets(self)
+
+        self.topbar = QTopBar(self)
+
+        self.big_widgets = QBigWidgets(self, location=(600, 800), size=100)
+        self.left_wait = QBigWidgets(self, location=(45, 330), size=100)
+        self.right_wait = QBigWidgets(self, location=(520, 80), size=100)
+
+        self.game_data = game_data
 
     @staticmethod
     def send_game_data_req():
@@ -70,7 +72,11 @@ class GameGUI(QDialog):
         game_data.send_get_move_req()
 
     def send_build_req(self):
-        game_data.send_build_req(self.pane.index)
+        game_data.send_build_req(self.pane.index, self.pane.get_chosen())
+        self.big_widgets.start_waiting()
+
+    def send_build_req_discard(self):
+        game_data.send_build_req(self.pane.index, self.pane.get_chosen(), discard=True)
         self.big_widgets.start_waiting()
 
     def send_card_details(self, index):
@@ -81,13 +87,18 @@ class GameGUI(QDialog):
         print(login, password)
         return login, password
 
-    def new_move(self, player, left, right):
+    def new_move(self, player, left, right, money_delta=[]):
         print("Built IDs", player, left, right)
         self.big_widgets.stop_waiting()
+        self.left_wait.stop_waiting()
+        self.right_wait.stop_waiting()
         self.player_deck.build_card(player)
 
-    def card_details(self, res):
-        self.pane.update_card_details(res)
+        if len(money_delta) > 0:
+            self.topbar.money_delta(money_delta)
+
+    def card_details(self, res, availability):
+        self.pane.update_card_details(res, availability)
 
     def update_game(self, index):
         print("Update game")
@@ -110,43 +121,32 @@ class GameGUI(QDialog):
         self.set_cards(game_data.cards)
         self.stats.update_data(vp=game_data.vp, money=game_data.money, military=game_data.military, ready=game_data.ready)
 
+        a, b, c, d = game_data.top_data
+        print("DATA", a, b, c, d)
+        self.topbar.update_data(a, b, c, d)
+
     def set_right_cards(self, no):
         self.right_cards = []
         off = 0
-        for _ in range(no):
-            card = QCard(self, 'back1')
-            pixmap = QPixmap(f"cards/back1.jpg").scaledToHeight(100)
-            card.setPixmap(pixmap)
-            card.move(50 + off, 30)
-            card.resize(pixmap.width(), pixmap.height())
-            card.show()  # You were missing this.
-            off += 10
-            self.right_cards.append(card)
 
     def set_big(self, index):
         self.pane.set_card(index)
         self.send_card_details(index)
 
-        # self.player_deck.build_card(111)
-        # self.player_deck.build_card(121)
-        # self.player_deck.build_card(131)
-        # self.player_deck.build_card(132)
-        #
-        # self.player_deck.build_card(141)
-        # self.player_deck.build_card(142)
-        # self.player_deck.build_card(151)
-        # self.player_deck.build_card(152)
-        # self.player_deck.build_card(161)
-        # self.player_deck.build_card(162)
+        cards = [111, 112, 113, 121, 122, 123, 131, 132, 133, 141, 142, 143, 151, 152, 153, 161, 162, 163]
 
-    def update_queue(self, no=0):
-        print("updating queue")
-        # if no != 3:
-        #     self.queue_label = QLabel(self)
-        #     self.queue_label.setText(f'{no}/3 players in queue')
-        #     self.queue_label.move(0,0)
-        #     self.queue_label.show()
-        self.stats.update_data(ready=no)
+        # for c in cards:
+        #     self.player_deck.build_card(c)
+        #     self.player_deck.build_card(c, owner='left')
+        #     self.player_deck.build_card(c, owner='right')
+
+
+    def update_queue(self, data=[0, False, False]):
+        if data[1] is True:
+            self.left_wait.start_waiting()
+        if data[2] is True:
+            self.right_wait.start_waiting()
+        self.stats.update_data(ready=data[0])
 
     def update_wonder(self, index):
         wonder = QWonder(self, index)
@@ -172,8 +172,7 @@ class GameGUI(QDialog):
             card.setPixmap(pixmap)
             card.move(10 + off, self.height() - 150)
             card.resize(pixmap.width(), pixmap.height())
-            card.show()  # You were missing this.
-            # off += pixmap.width() + 3
+            card.show()
             off += 50
             self.cards.append(card)
 
@@ -181,8 +180,9 @@ class GameGUI(QDialog):
 if __name__ == '__main__':
     app = QApplication([])
     app.setWindowIcon(QIcon('icon.png'))
-    gui = GameGUI()
-    game_data = GameData(gui)
+    game_data = GameData()
+    gui = GameGUI(game_data=game_data)
+    game_data.set_gui(gui)
     if len(gui.login) > 0:
         game_data.login = gui.login
     game_data.send_game_data_req()
@@ -191,7 +191,9 @@ if __name__ == '__main__':
     network_client.start()
 
     gui.show()
+    app.setQuitOnLastWindowClosed(True)
     app.exec_()
+    queue.append(False)
 
 
 # class AnimationLabel(QLabel):

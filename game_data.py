@@ -3,11 +3,11 @@ import json
 
 
 class GameData:
-    def __init__(self, gui):
+    def __init__(self):
         self.login = 'a'
         self.queue = 0
 
-        self.gui = gui
+        self.gui = None
 
         self.cards = []
         self.money = 0
@@ -20,6 +20,11 @@ class GameData:
         self.right_neighbor = []
 
         self.ready = 0
+
+        self.top_data = None
+
+    def set_gui(self, gui):
+        self.gui = gui
 
     def parse_response(self, data):
         data = json.loads(data)
@@ -50,7 +55,7 @@ class GameData:
             print("Bad response", data)
 
     def parse_game_data(self, data):
-        self.money = data.get('money')
+        self.money = data.get('money')[0]
         self.vp = data.get('vp')
         self.military = data.get('military')
         self.cards = data.get('cards')
@@ -58,13 +63,17 @@ class GameData:
         self.left_neighbor = data.get('left_neighbor')
         self.right_neighbor = data.get('right_neighbor')
 
+        self.top_data = [data.get('money'), data.get('military'), data.get('wins'), data.get('loses')]
+
     def parse_sync_response(self, data):
         login = data.get('id')
         if login != self.login:
             return
 
         ready = data.get('players_ready')
-        self.gui.queue_text.emit(ready)
+        left = data.get('left_waiting')
+        right = data.get('right_waiting')
+        self.gui.queue_text.emit([ready, left, right])
 
         new_move = data.get('move_ready')
         if new_move is True:
@@ -99,12 +108,14 @@ class GameData:
         player_build = data.get('player_built')
         left_build = data.get('left_neighbor_built')
         right_build = data.get('right_neighbor_built')
-        self.gui.new_move_signal.emit(player_build, left_build, right_build)
-        pass
+        delta = data.get('player_money_delta')
+        self.gui.new_move_signal.emit(player_build, left_build, right_build, [0, delta, 0])
+        print("Get move", data)
 
     def parse_card_details(self, data):
         res = data.get('resources_needed')
-        self.gui.card_details_signal.emit(res)
+        availability = data.get('resources_available')
+        self.gui.card_details_signal.emit(res, availability)
 
     def send_login(self, login):
         data = {'type': 'login', 'id': login}
@@ -119,8 +130,8 @@ class GameData:
         data = {'type': 'get_data', 'id': self.login}
         queue.append(data)
 
-    def send_build_req(self, index):
-        data = {'type': 'build', 'id': self.login, 'building': index}
+    def send_build_req(self, index, chosen, discard=False):
+        data = {'type': 'build', 'id': self.login, 'building': index, 'chosen': chosen, 'discard': discard}
         queue.append(data)
 
     def send_get_move_req(self):

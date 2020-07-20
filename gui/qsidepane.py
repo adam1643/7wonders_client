@@ -15,14 +15,6 @@ class SidePane(QLabel):
 
         self.index = 0
 
-        # buttons = QDialogButtonBox(
-        #     QDialogButtonBox.Ok | QDialogButtonBox.Cancel,
-        #     Qt.Horizontal, self)
-        # buttons.accepted.connect(self.send_get_move_req)
-        # buttons.rejected.connect(self.send_build_req)
-        # buttons.move(OFFSET + 60, 480)
-
-        # self.texture_pix = QPixmap('brown_texture.jpg')
         self.setStyleSheet("SidePane {background-image: url(brown_texture.jpg); background-attachment: fixed; background-position: center;}")
 
         button = QPushButton("Buduj", parent=self.parent1)
@@ -33,26 +25,44 @@ class SidePane(QLabel):
 
         button2 = QPushButton("Odrzuc", parent=self.parent1)
         button2.move(OFFSET + 210, 350)
-        button2.setEnabled(False)
-        button2.clicked.connect(self.parent1.send_build_req)
+        button2.setEnabled(True)
+        button2.clicked.connect(self.parent1.send_build_req_discard)
         button2.show()
 
         self.resources = []
+        self.checkmarks = []
         self.card = QLabel(self.parent1)
 
-    def update_card_details(self, res):
+    def update_card_details(self, res, availability):
         for r in self.resources:
             r.setParent(None)
             r.deleteLater()
+        for c in self.checkmarks:
+            c.setParent(None)
+            c.deleteLater()
+
         self.resources = []
+        self.checkmarks = []
+
         off = 0
-        for r in res:
+        for r, c in zip(res, availability):
             q_res = QResource(self.parent1, res=r, location=[OFFSET + 90, 390 + off])
-            off += 40
             self.resources.append(q_res)
 
-        print("Received RES!", res)
+            check = 'none'
+            if c == 'own' or c == 'none' or c == 'left' or c == 'right':
+                check = c
+                q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40, 395 + off])
+                self.checkmarks.append(q_check)
+            if c == 'both':
+                check = 'left'
+                q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40, 395 + off])
+                self.checkmarks.append(q_check)
+                check = 'right'
+                q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40 + 40, 395 + off])
+                self.checkmarks.append(q_check)
 
+            off += 40
 
     def set_card(self, index):
         self.index = index
@@ -63,26 +73,20 @@ class SidePane(QLabel):
         self.card.resize(self.card.pixmap().width(), self.card.pixmap().height())
         self.card.show()
 
-        # srcImg = QImage("cards/111.jpg").scaledToHeight(100)
-        # center = QPoint(srcImg.rect().center())
-        # matrix = QTransform()
-        # matrix.translate(center.x(), center.y())
-        # matrix.rotate(90)
-        # dstImg = QImage(srcImg.transformed(matrix))
-        # dstPix = QPixmap().fromImage(dstImg)
-        #
-        # print("Qlabel")
-        # a = QLabel(self.parent1)
-        # a.setPixmap(dstPix)
-        # a.resize(dstPix.width(), dstPix.height())
-        # a.move(100, 100)
-        # a.show()
+    def get_chosen(self):
+        chosen = ['none' for _ in self.checkmarks]
+        for idx, c in enumerate(self.checkmarks):
+            if c.highlighted is True:
+                chosen[idx] = c.check
+
+        return chosen
 
 
 class QResource(QLabel):
     def __init__(self, parent=None, res=None, location=[100, 100]):
         super(QResource, self).__init__(parent)
         self.parent1 = parent
+        self.res = res
 
         # self.setStyleSheet("QResource {background-color: transparent;}")
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
@@ -98,4 +102,55 @@ class QResource(QLabel):
         self.setPixmap(dst_pix)
         self.move(location[0], location[1])
         self.show()
+
+
+class QCheckmark(QLabel):
+    def __init__(self, parent=None, check='none', location=(100, 100)):
+        super(QCheckmark, self).__init__(parent)
+        self.parent1 = parent
+        self.check = check
+
+        self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.setStyleSheet("background:transparent;")
+
+        if check == 'own':
+            src_img = QImage(f'check_ok.png').scaledToHeight(20)
+            dst_pix = QPixmap(f'check_ok.png').scaledToHeight(20)
+        elif check == 'none':
+            src_img = QImage(f'check_wrong.png').scaledToHeight(20)
+            dst_pix = QPixmap(f'check_wrong.png').scaledToHeight(20)
+        elif check == 'left':
+            src_img = QImage(f'icons/left.png').scaledToHeight(20)
+            dst_pix = QPixmap(f'icons/left.png').scaledToHeight(20)
+        elif check == 'right':
+            src_img = QImage(f'icons/right.png').scaledToHeight(20)
+            dst_pix = QPixmap(f'icons/right.png').scaledToHeight(20)
+
+        self.setPixmap(dst_pix)
+        self.move(location[0], location[1])
+        self.show()
+
+        self.highlighted = False
+
+    def set_highlighted(self, status):
+        self.highlighted = status
+        dst_pix = None
+        if status is True:
+            if self.check == 'left':
+                dst_pix = QPixmap(f'icons/left-yellow.png').scaledToHeight(20)
+            if self.check == 'right':
+                dst_pix = QPixmap(f'icons/right-yellow.png').scaledToHeight(20)
+        else:
+            if self.check == 'left':
+                dst_pix = QPixmap(f'icons/left.png').scaledToHeight(20)
+            if self.check == 'right':
+                dst_pix = QPixmap(f'icons/right.png').scaledToHeight(20)
+        if dst_pix is not None:
+            self.setPixmap(dst_pix)
+
+    def mousePressEvent(self, event):
+        self.set_highlighted(True)
+        super(QCheckmark, self).mousePressEvent(event)
+
 
