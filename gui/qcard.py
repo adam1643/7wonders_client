@@ -20,8 +20,8 @@ left_offsets = {'brown': (85, 180),
            'purple': (170, 500),
            'unknown': (170, 700)}
 
-right_offsets = {'brown': (655, 100),
-           'grey': (655, 100),
+right_offsets = {'brown': (655, 120),
+           'grey': (655, 120),
            'green': (600, 200),
            'red': (400, 200),
            'blue': (500, 200),

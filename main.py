@@ -13,6 +13,7 @@ from game_data import GameData
 from gui.main_widgets import QBigWidgets
 from gui.qcard import QCard, QPlayerDeck
 from gui.QLoginDialog import QLoginDialog
+from gui.qresults import QResults
 from gui.qwonder import QWonder
 from gui.qstats import QStats
 from gui.qsidepane import SidePane
@@ -25,8 +26,9 @@ class GameGUI(QDialog):
     queue_text = pyqtSignal(list)
     wonder_signal = pyqtSignal(int)
     game_update_signal = pyqtSignal(int)
+    first_game_update_signal = pyqtSignal(list, list, list)
     new_move_signal = pyqtSignal(int, int, int, list)
-    card_details_signal = pyqtSignal(list, list)
+    card_details_signal = pyqtSignal(list, list, bool)
 
     def __init__(self, parent=None, game_data=None):
         super(GameGUI, self).__init__(parent)
@@ -46,6 +48,7 @@ class GameGUI(QDialog):
         self.queue_text.connect(self.update_queue)
         self.wonder_signal.connect(self.update_wonder)
         self.game_update_signal.connect(self.update_game)
+        self.first_game_update_signal.connect(self.first_update_game)
         self.new_move_signal.connect(self.new_move)
         self.card_details_signal.connect(self.card_details)
         self.queue_label = None
@@ -58,7 +61,7 @@ class GameGUI(QDialog):
 
         self.topbar = QTopBar(self)
 
-        self.big_widgets = QBigWidgets(self, location=(600, 800), size=100)
+        self.big_widgets = QBigWidgets(self, location=(800, 630), size=100)
         self.left_wait = QBigWidgets(self, location=(45, 330), size=100)
         self.right_wait = QBigWidgets(self, location=(520, 80), size=100)
 
@@ -82,6 +85,9 @@ class GameGUI(QDialog):
     def send_card_details(self, index):
         game_data.send_card_details_req(index)
 
+    def send_wonder_details(self, index):
+        game_data.send_wonder_details_req(index)
+
     def get_login(self):
         login, password, ok = QLoginDialog.get_login_data()
         print(login, password)
@@ -97,8 +103,8 @@ class GameGUI(QDialog):
         if len(money_delta) > 0:
             self.topbar.money_delta(money_delta)
 
-    def card_details(self, res, availability):
-        self.pane.update_card_details(res, availability)
+    def card_details(self, res, availability, upgrade=False):
+        self.pane.update_card_details(res, availability, upgrade)
 
     def update_game(self, index):
         print("Update game")
@@ -125,6 +131,15 @@ class GameGUI(QDialog):
         print("DATA", a, b, c, d)
         self.topbar.update_data(a, b, c, d)
 
+    def first_update_game(self, built, left, right):
+        print('first_update')
+        for i in built:
+            self.player_deck.build_card(i)
+        for i in left:
+            self.player_deck.build_card(i, owner='left')
+        for i in right:
+            self.player_deck.build_card(i, owner='right')
+
     def set_right_cards(self, no):
         self.right_cards = []
         off = 0
@@ -140,11 +155,18 @@ class GameGUI(QDialog):
         #     self.player_deck.build_card(c, owner='left')
         #     self.player_deck.build_card(c, owner='right')
 
+    def set_wonder(self, index):
+        self.send_wonder_details(index)
+        self.pane.set_wonder(index)
 
-    def update_queue(self, data=[0, False, False]):
+        QResults.set_battle(self, player=[-1, -1], left=[-1, 1], right=[-1, 1])
+
+    def update_queue(self, data=[0, False, False, False]):
         if data[1] is True:
-            self.left_wait.start_waiting()
+            self.big_widgets.start_waiting()
         if data[2] is True:
+            self.left_wait.start_waiting()
+        if data[3] is True:
             self.right_wait.start_waiting()
         self.stats.update_data(ready=data[0])
 

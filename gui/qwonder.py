@@ -31,6 +31,11 @@ class QWonder(QLabel):
             dst_pix = QPixmap().fromImage(dst_img)
 
             self.setPixmap(dst_pix)
+            self.lower()
+
+    def mousePressEvent(self, ev) -> None:
+        self.parent1.set_wonder(self.index)
+        super(QWonder, self).mousePressEvent(ev)
 
     def resizeEvent(self, a0: QResizeEvent) -> None:
         super(QWonder, self).resizeEvent(a0)
