@@ -7,7 +7,8 @@ from PyQt5.QtWidgets import QApplication, QDialog, QGridLayout, QCheckBox, QStyl
 from PyQt5.QtCore import Qt, QVariantAnimation, QVariant, pyqtSlot, QEasingCurve, QEventLoop, QTimer, QDateTime, \
     QPropertyAnimation, QRect, pyqtSignal
 
-from client import queue, client
+# from client import queue, client
+from http_client import queue, client
 import threading
 from game_data import GameData
 from gui.main_widgets import QBigWidgets

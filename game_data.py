@@ -1,4 +1,4 @@
-from client import queue
+from http_client import queue
 import json
 
 
