@@ -1,5 +1,3 @@
-import sys
-
 from PyQt5.QtGui import QPalette, QColor, QPixmap, QResizeEvent, QTransform, QIcon
 from PyQt5.QtWidgets import QApplication, QDialog, QGridLayout, QCheckBox, QStyleFactory, QTextEdit, QPushButton, \
     QGroupBox, QVBoxLayout, QHBoxLayout, QRadioButton, QLineEdit, QLabel, QSlider, QWidget, QDateTimeEdit, \
@@ -69,6 +67,7 @@ class GameGUI(QDialog):
         self.right_wait = QBigWidgets(self, location=(520, 80), size=100)
 
         self.game_data = game_data
+        self.wonder, self.left_wonder, self.right_wonder = None, None, None
 
     @staticmethod
     def send_game_data_req():
@@ -114,16 +113,17 @@ class GameGUI(QDialog):
         left_id = game_data.left_neighbor[0]
         right_id = game_data.right_neighbor[0]
 
-        wonder = QWonder(self, left_id, owner='left')
-        wonder.move(20, 200)
-        wonder.show()
-        self.left_wonder = wonder
+        if self.left_wonder is None:
+            wonder = QWonder(self, left_id, owner='left')
+            wonder.move(20, 200)
+            wonder.show()
+            self.left_wonder = wonder
 
-        # self.set_left_cards(game_data.left_neighbor[1])
-        wonder = QWonder(self, right_id, owner='right')
-        wonder.move(400, 50)
-        wonder.show()
-        self.right_wonder = wonder
+        if self.right_wonder is None:
+            wonder = QWonder(self, right_id, owner='right')
+            wonder.move(400, 50)
+            wonder.show()
+            self.right_wonder = wonder
 
         self.set_right_cards(game_data.right_neighbor[1])
 
@@ -165,7 +165,10 @@ class GameGUI(QDialog):
         self.send_wonder_details(index)
         self.pane.set_wonder(index)
 
-        QResults.set_battle(self, player=[-1, -1], left=[-1, 1], right=[-1, 1])
+        self.wonder.upgrade()
+        self.left_wonder.upgrade()
+        self.right_wonder.upgrade()
+        # QResults.set_battle(self, player=[-1, -1], left=[-1, 1], right=[-1, 1])
 
     def update_queue(self, data=[0, False, False, False]):
         if data[1] is True:
@@ -177,13 +180,17 @@ class GameGUI(QDialog):
         self.stats.update_data(ready=data[0])
 
     def update_wonder(self, index):
-        wonder = QWonder(self, index)
-        pixmap = QPixmap(f"wonders/{index}.jpeg").scaledToHeight(150)
-        wonder.setPixmap(pixmap)
-        wonder.move(self.width() - pixmap.width(), self.height() - pixmap.height())
-        wonder.resize(pixmap.width(), pixmap.height())
-        wonder.show()
-        self.wonder = wonder
+        if self.wonder is None:
+            wonder = QWonder(self, index)
+            pixmap = QPixmap(f"wonders/{index}.jpeg").scaledToHeight(150)
+            wonder.setPixmap(pixmap)
+            wonder.move(self.width() - pixmap.width(), self.height() - pixmap.height() - 30)
+            wonder.resize(pixmap.width(), pixmap.height())
+            wonder.show()
+            self.wonder = wonder
+        else:
+            pixmap = QPixmap(f"wonders/{index}.jpeg").scaledToHeight(150)
+            self.wonder.setPixmap(pixmap)
 
     def set_cards(self, ids):
         for card in self.cards:
