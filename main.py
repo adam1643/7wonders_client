@@ -30,6 +30,7 @@ class GameGUI(QDialog):
     first_game_update_signal = pyqtSignal(list, list, list)
     new_move_signal = pyqtSignal(int, int, int, list)
     card_details_signal = pyqtSignal(list, list, bool)
+    end_age_signal = pyqtSignal(list, list, list)
 
     def __init__(self, parent=None, game_data=None):
         super(GameGUI, self).__init__(parent)
@@ -52,6 +53,7 @@ class GameGUI(QDialog):
         self.first_game_update_signal.connect(self.first_update_game)
         self.new_move_signal.connect(self.new_move)
         self.card_details_signal.connect(self.card_details)
+        self.end_age_signal.connect(self.end_age)
         self.queue_label = None
 
         self.stats = QStats(self)
@@ -155,6 +157,9 @@ class GameGUI(QDialog):
         #     self.player_deck.build_card(c)
         #     self.player_deck.build_card(c, owner='left')
         #     self.player_deck.build_card(c, owner='right')
+
+    def end_age(self, player, left, right):
+        QResults.set_battle(self, player, left, right)
 
     def set_wonder(self, index):
         self.send_wonder_details(index)

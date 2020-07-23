@@ -57,6 +57,8 @@ class GameData:
             elif data.get('type') == 'wonder_details':
                 print("Wonder details", data)
                 self.parse_wonder_details(data)
+            elif data.get('type') == 'end_age':
+                self.parse_end_age(data)
             else:
                 print("Bad response type", data)
         else:
@@ -91,7 +93,10 @@ class GameData:
         right = data.get('right_waiting')
         self.gui.queue_text.emit([ready, player, left, right])
 
+        end_age = data.get('end_age')
         new_move = data.get('move_ready')
+        if end_age is True:
+            self.send_end_age_req()
         if new_move is True:
             print("MOVE MOVE MOVE")
             self.send_get_move_req()
@@ -99,17 +104,6 @@ class GameData:
         update = data.get('update')
         if update is True:
             self.send_game_data_req()
-
-        # print(data)
-
-        # players_queue = data.get('queue')
-        # print('Players in queue: ', players_queue)
-        # self.queue = players_queue
-        #
-        # print("Queue", self.queue)
-
-        # self.gui.queue_text.emit(self.queue)
-        # self.gui.wonder_signal.emit(self.queue)
 
     def parse_game_data_resposne(self, data):
         data = json.loads(data)
@@ -127,6 +121,12 @@ class GameData:
         delta = data.get('player_money_delta')
         self.gui.new_move_signal.emit(player_build, left_build, right_build, [0, delta, 0])
         print("Get move", data)
+
+    def parse_end_age(self, data):
+        player = data.get('player_battle')
+        left = data.get('left_battle')
+        right = data.get('right_battle')
+        self.gui.end_age_signal.emit(player, left, right)
 
     def parse_card_details(self, data):
         res = data.get('resources_needed')
@@ -171,4 +171,8 @@ class GameData:
 
     def send_wonder_details_req(self, index):
         data = {'id': self.login, 'type': 'wonder_details', 'wonder_id': index}
+        queue.append(data)
+
+    def send_end_age_req(self):
+        data = {'id': self.login, 'type': 'end_age'}
         queue.append(data)
