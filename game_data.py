@@ -51,6 +51,9 @@ class GameData:
                 self.parse_sync_response(data)
             elif data.get('type') == 'build':
                 print("Build response", data)
+                status = data.get('status')
+                if status is False:
+                    self.gui.error_signal.emit(10)
             elif data.get('type') == 'card_details':
                 print("Card details", data)
                 self.parse_card_details(data)
@@ -59,6 +62,11 @@ class GameData:
                 self.parse_wonder_details(data)
             elif data.get('type') == 'end_age':
                 self.parse_end_age(data)
+            elif data.get('type') == 'end_game':
+                self.parse_end_game(data)
+            elif data.get('type') == 'get_discarded':
+                discarded = data.get('discarded')
+                self.gui.show_discarded_signal.emit(discarded)
             else:
                 print("Bad response type", data)
         else:
@@ -118,8 +126,9 @@ class GameData:
         player_build = data.get('player_built')
         left_build = data.get('left_neighbor_built')
         right_build = data.get('right_neighbor_built')
-        delta = data.get('player_money_delta')
-        self.gui.new_move_signal.emit(player_build, left_build, right_build, [0, delta, 0])
+        money, military = data.get('money'), data.get('military')
+        wins, loses = data.get('wins'), data.get('loses')
+        self.gui.new_move_signal.emit(player_build, left_build, right_build, [money, military, wins, loses])
         print("Get move", data)
 
     def parse_end_age(self, data):
@@ -127,6 +136,14 @@ class GameData:
         left = data.get('left_battle')
         right = data.get('right_battle')
         self.gui.end_age_signal.emit(player, left, right)
+
+    def parse_end_game(self, data):
+        players = data.get('players')
+        battles = data.get('battles')
+        money = data.get('money')
+        blue, wonder = data.get('blue'), data.get('wonder')
+        yellow, green, purple = data.get('yellow'), data.get('green'), data.get('purple')
+        self.gui.end_game_signal.emit(players, battles, money, blue, wonder, yellow, green, purple)
 
     def parse_card_details(self, data):
         res = data.get('resources_needed')
@@ -169,10 +186,18 @@ class GameData:
         data = {'id': self.login, 'type': 'card_details', 'card_id': index}
         queue.append(data)
 
+    def get_discarded_req(self):
+        data = {'id': self.login, 'type': 'get_discarded'}
+        queue.append(data)
+
     def send_wonder_details_req(self, index):
         data = {'id': self.login, 'type': 'wonder_details', 'wonder_id': index}
         queue.append(data)
 
     def send_end_age_req(self):
         data = {'id': self.login, 'type': 'end_age'}
+        queue.append(data)
+
+    def send_end_game_req(self):
+        data = {'id': self.login, 'type': 'end_game'}
         queue.append(data)

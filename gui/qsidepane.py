@@ -17,40 +17,52 @@ class SidePane(QLabel):
 
         self.setStyleSheet("SidePane {background-image: url(brown_texture.jpg); background-attachment: fixed; background-position: center;}")
 
-        button = QPushButton("Buduj", parent=self.parent1)
-        button.move(OFFSET + 125, 350)
-        button.setEnabled(True)
-        button.clicked.connect(self.parent1.send_build_req)
-        button.show()
+        self.button_build = QPushButton("Buduj", parent=self.parent1)
+        self.button_build.move(OFFSET + 100, 350)
+        self.button_build.setEnabled(True)
+        self.button_build.clicked.connect(self.parent1.send_build_req)
+        self.button_build.show()
 
-        button2 = QPushButton("Odrzuc", parent=self.parent1)
-        button2.move(OFFSET + 210, 350)
-        button2.setEnabled(True)
-        button2.clicked.connect(self.parent1.send_build_req_discard)
-        button2.show()
+        self.button_discard = QPushButton("Odrzuc", parent=self.parent1)
+        self.button_discard.move(OFFSET + 235, 350)
+        self.button_discard.setEnabled(True)
+        self.button_discard.clicked.connect(self.parent1.send_build_req_discard)
+        self.button_discard.show()
+
+        self.button_wonder = QPushButton("Cud", parent=self.parent1)
+        self.button_wonder.move(OFFSET + 180, 350)
+        self.button_wonder.setEnabled(True)
+        self.button_wonder.setFixedSize(50, self.button_discard.height())
+        self.button_wonder.clicked.connect(lambda: self.parent1.set_wonder(1))
+        self.button_wonder.show()
 
         self.resources = []
         self.checkmarks = []
         self.card = QLabel(self.parent1)
 
-    def update_card_details(self, res, availability, upgrade=False):
-        for r in self.resources:
-            r.setParent(None)
-            r.deleteLater()
-        for line in self.checkmarks:
-            for c in line:
-                c.setParent(None)
-                c.deleteLater()
+        self.upgrade_icon = QUpgradeIcon(self.parent1, location=[OFFSET + 130, 390 + 10])
 
+    def set_build_button_enabled(self, status):
+        self.button_build.setEnabled(status)
+
+    def set_dicard_button_enabled(self, status):
+        self.button_discard.setEnabled(status)
+
+    def update_card_details(self, res, availability, upgrade=False):
+        for resource, checkmarks in zip(self.resources, self.checkmarks):
+            resource.setParent(None)
+            resource.deleteLater()
+            for ch in checkmarks:
+                ch.setParent(None)
+                ch.deleteLater()
         self.resources = []
         self.checkmarks = []
 
-        print(availability)
-
         if upgrade is True:
-            q_upgrade = QUpgradeIcon(self.parent1, location=[OFFSET + 130, 390 + 10])
-            self.resources.append(q_upgrade)
+            self.upgrade_icon.show()
             return
+        else:
+            self.upgrade_icon.hide()
 
         off = 0
         for r, c in zip(res, availability):
@@ -58,43 +70,54 @@ class SidePane(QLabel):
             self.resources.append(q_res)
             self.checkmarks.append([])
 
-            if c == 'own' or c == 'none' or c == 'left' or c == 'right':
-                check = c
-                q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40, 395 + off])
+            if c in ['none', 'own', 'down']:
+                q_check = QCheckmark(self.parent1, check=c, location=[OFFSET + 90 + 40, 395 + off])
                 self.checkmarks[-1].append(q_check)
-            if c == 'both':
-                print("BOTH")
-                check = 'left'
-                q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40, 395 + off], line=self.checkmarks[-1])
+            if c in ['left', 'both', 'all', 'left_own']:
+                q_check = QCheckmark(self.parent1, check='left', location=[OFFSET + 90 + 40, 395 + off], line=self.checkmarks[-1])
                 self.checkmarks[-1].append(q_check)
-                check = 'right'
-                q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40 + 40, 395 + off], line=self.checkmarks[-1])
+            if c in ['all', 'left_own', 'right_own']:
+                q_check = QCheckmark(self.parent1, check='down', location=[OFFSET + 90 + 40 + 20, 395 + off], line=self.checkmarks[-1])
                 self.checkmarks[-1].append(q_check)
-            if c == 'all':
-                check = 'left'
-                q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40, 395 + off], line=self.checkmarks[-1])
-                self.checkmarks[-1].append(q_check)
-                check = 'right'
-                q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40 + 40, 395 + off], line=self.checkmarks[-1])
-                self.checkmarks[-1].append(q_check)
-                check = 'down'
-                q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40 + 20, 395 + off], line=self.checkmarks[-1])
-                self.checkmarks[-1].append(q_check)
-            if c == 'left_own':
-                check = 'left'
-                q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40, 395 + off], line=self.checkmarks[-1])
-                self.checkmarks[-1].append(q_check)
-                check = 'down'
-                q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40 + 20, 395 + off], line=self.checkmarks[-1])
-                self.checkmarks[-1].append(q_check)
-            if c == 'right_own':
-                check = 'right'
-                q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40 + 40, 395 + off], line=self.checkmarks[-1])
-                self.checkmarks[-1].append(q_check)
-                check = 'down'
-                q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40 + 20, 395 + off], line=self.checkmarks[-1])
+            if c in ['right', 'both', 'all', 'right_own']:
+                q_check = QCheckmark(self.parent1, check='right', location=[OFFSET + 90 + 40 + 40, 395 + off], line=self.checkmarks[-1])
                 self.checkmarks[-1].append(q_check)
 
+            # if c == 'own' or c == 'none' or c == 'left' or c == 'right':
+            #     check = c
+            #     q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40, 395 + off])
+            #     self.checkmarks[-1].append(q_check)
+            # if c == 'both':
+            #     check = 'left'
+            #     q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40, 395 + off], line=self.checkmarks[-1])
+            #     self.checkmarks[-1].append(q_check)
+            #     check = 'right'
+            #     q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40 + 40, 395 + off], line=self.checkmarks[-1])
+            #     self.checkmarks[-1].append(q_check)
+            # if c == 'all':
+            #     check = 'left'
+            #     q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40, 395 + off], line=self.checkmarks[-1])
+            #     self.checkmarks[-1].append(q_check)
+            #     check = 'right'
+            #     q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40 + 40, 395 + off], line=self.checkmarks[-1])
+            #     self.checkmarks[-1].append(q_check)
+            #     check = 'down'
+            #     q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40 + 20, 395 + off], line=self.checkmarks[-1])
+            #     self.checkmarks[-1].append(q_check)
+            # if c == 'left_own':
+            #     check = 'left'
+            #     q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40, 395 + off], line=self.checkmarks[-1])
+            #     self.checkmarks[-1].append(q_check)
+            #     check = 'down'
+            #     q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40 + 20, 395 + off], line=self.checkmarks[-1])
+            #     self.checkmarks[-1].append(q_check)
+            # if c == 'right_own':
+            #     check = 'right'
+            #     q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40 + 40, 395 + off], line=self.checkmarks[-1])
+            #     self.checkmarks[-1].append(q_check)
+            #     check = 'down'
+            #     q_check = QCheckmark(self.parent1, check=check, location=[OFFSET + 90 + 40 + 20, 395 + off], line=self.checkmarks[-1])
+            #     self.checkmarks[-1].append(q_check)
             off += 20
 
     def set_card(self, index):
@@ -107,6 +130,7 @@ class SidePane(QLabel):
         self.card.show()
 
     def set_wonder(self, index):
+        self.index = 1
         pixmap1 = QPixmap(f'wonders/{index}.jpeg').scaledToHeight(100)
         self.card.move(self.parent1.width() - pixmap1.width() - 20, 50)
         self.card.setPixmap(pixmap1)
@@ -134,7 +158,6 @@ class QResource(QLabel):
         self.parent1 = parent
         self.res = res
 
-        # self.setStyleSheet("QResource {background-color: transparent;}")
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         self.setStyleSheet("background:transparent;")
@@ -142,9 +165,7 @@ class QResource(QLabel):
         if res is None:
             return
 
-        src_img = QImage(f'res/{res}.png').scaledToHeight(30)
         dst_pix = QPixmap(f'res/{res}.png').scaledToHeight(30)
-
         self.setPixmap(dst_pix)
         self.move(location[0], location[1])
         self.show()
@@ -224,4 +245,4 @@ class QUpgradeIcon(QLabel):
         self.setPixmap(dst_pix)
 
         self.move(location[0], location[1])
-        self.show()
+        self.hide()

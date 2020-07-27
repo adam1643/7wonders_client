@@ -7,6 +7,8 @@ class QLoginDialog(QDialog):
         super(QLoginDialog, self).__init__(parent)
         layout = QVBoxLayout(self)
 
+        self.setWindowTitle("Login")
+
         self.textName = QLineEdit(self)
         self.textPass = QLineEdit(self)
 

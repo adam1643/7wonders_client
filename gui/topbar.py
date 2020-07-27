@@ -26,6 +26,8 @@ class QTopBar(QLabel):
         # self.right_indicator = QIcon(self.parent1, location=(500, 0), icon_name='right')
 
         self.indicators = []
+        self.old_money, self.old_military, self.old_wins, self.old_loses = [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]
+        self.new_money, self.new_military, self.new_wins, self.new_loses = [], [], [], []
         self.money = []
         self.military = []
         self.wins = []
@@ -57,55 +59,57 @@ class QTopBar(QLabel):
 
         # self.update_data([3, 3, 3], [2, 1, 5], [1, 3, 3], [-2, -4, -2])
 
-    def update_data(self, money=None, military=None, wins=None, loses=None):
-        self.update_money(money)
-        self.update_military(military)
-        self.update_wins(wins)
-        self.update_loses(loses)
+    def update_data(self, money=None, military=None, wins=None, loses=None, anim=True):
+        self.update_money(money, anim)
+        self.update_military(military, anim)
+        self.update_wins(wins, anim)
+        self.update_loses(loses, anim)
 
-    def update_money(self, data):
-        print("Money", data)
+    def update_money(self, data, anim=False):
         if data is None:
             return
         for i in range(len(data)):
-            print("money player", data[i])
-            self.money[i].setText(f'{data[i]}')
+            delta = data[i] - self.old_money[i]
+            if anim is True and delta != 0:
+                print("Set money animation")
+                self.money[i].set_animation(delta, data[i])
+            else:
+                print("Set money NO ANIM")
+                self.money[i].setText(f'{data[i]}')
+            self.old_money[i] = data[i]
 
-    def update_military(self, data):
+    def update_military(self, data, anim=False):
         if data is None:
             return
         for i in range(len(data)):
-            self.military[i].setText(f'{data[i]}')
+            delta = data[i] - self.old_military[i]
+            if anim is True and delta != 0:
+                self.military[i].set_animation(delta, data[i])
+            else:
+                self.military[i].setText(f'{data[i]}')
+            self.old_military[i] = data[i]
 
-    def update_wins(self, data):
+    def update_wins(self, data, anim=False):
         if data is None:
             return
         for i in range(len(data)):
-            self.wins[i].setText(f'{data[i]}')
+            delta = data[i] - self.old_wins[i]
+            if anim is True and delta != 0:
+                self.wins[i].set_animation(delta, data[i])
+            else:
+                self.wins[i].setText(f'{data[i]}')
+            self.old_wins[i] = data[i]
 
-    def update_loses(self, data):
+    def update_loses(self, data, anim=False):
         if data is None:
             return
         for i in range(len(data)):
-            self.loses[i].setText(f'{data[i]}')
-
-    def money_delta(self, delta):
-        for d in delta:
-            if d == 0:
-                continue
-            color = 'red' if d < 0 else 'green'
-            self.delta_test = QText1(parent=self.parent1, location=(30 + 30 + 30 + 345, 50), text=str(d), color=color)
-            self.delta_test.set_animation()
-            self.delta_test.anim_start.start()
-
-    def update_left_player(self, data):
-        pass
-
-    def update_down_player(self, data):
-        pass
-
-    def update_right_player(self, data):
-        pass
+            delta = data[i] - self.old_loses[i]
+            if anim is True and delta != 0:
+                self.loses[i].set_animation(delta, data[i])
+            else:
+                self.loses[i].setText(f'{data[i]}')
+            self.old_loses[i] = data[i]
 
 
 class QIcon(QLabel):
@@ -129,6 +133,7 @@ class QText1(QLabel):
         super(QText1, self).__init__(parent)
 
         self.parent1 = parent
+        self.text = text
 
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -142,12 +147,46 @@ class QText1(QLabel):
         my_font.setBold(True)
         self.setFont(my_font)
 
+        self.anim = None
+        self.animation = None
+
         self.move(location[0], location[1])
         self.show()
 
-    def set_animation(self):
-        self.anim_start = QPropertyAnimation(self, b"geometry")
-        self.anim_start.setDuration(2000)
-        self.anim_start.setStartValue(QRect(30 + 30 + 30 + 345, 100, 30, 30))
-        self.anim_start.setEndValue(QRect(30 + 30 + 30 + 345, 10, 30, 30))
-        self.anim_start.finished.connect(lambda: self.setParent(None))
+    def set_animation(self, delta, new_value):
+        if delta > 0:
+            color = 'green'
+        else:
+            color = 'red'
+        self.anim = QText2(self.parent1, location=(self.x(), self.y()), text=f'{delta}', color=color)
+        self.show()
+        self.animation = QPropertyAnimation(self.anim, b"geometry")
+        self.animation.setDuration(1000)
+        self.animation.setStartValue(QRect(self.x(), self.y() + 40, 30, 30))
+        self.animation.setEndValue(QRect(self.x(), self.y(), 30, 30))
+        self.animation.finished.connect(lambda: self.anim.setParent(None))
+        self.animation.finished.connect(lambda: self.setText(f'{new_value}'))
+        self.animation.start()
+
+
+class QText2(QLabel):
+    def __init__(self, parent=None, location=(100, 100), text='0', color='grey'):
+        super(QText2, self).__init__(parent)
+
+        self.parent1 = parent
+        self.text = text
+
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setStyleSheet("background:transparent;")
+
+        self.setFixedWidth(30)
+
+        self.setText(text)
+        self.setStyleSheet(f'color: {color}; font-size: 25px;')
+        my_font = QtGui.QFont()
+        my_font.setBold(True)
+        self.setFont(my_font)
+
+        self.move(location[0], location[1])
+        self.show()
