@@ -54,7 +54,6 @@ class SidePane(QLabel):
         self.button_discard.setEnabled(status)
 
     def update_card_details(self, res, availability, upgrade=False):
-        self.wonder = False
         for resource, checkmarks in zip(self.resources, self.checkmarks):
             resource.setParent(None)
             resource.deleteLater()
@@ -76,13 +75,13 @@ class SidePane(QLabel):
             self.resources.append(q_res)
             self.checkmarks.append([])
 
-            if c in ['none', 'own', 'down']:
+            if c in ['none', 'own']:
                 q_check = QCheckmark(self.parent1, check=c, location=[OFFSET + 90 + 40, 395 + off])
                 self.checkmarks[-1].append(q_check)
             if c in ['left', 'both', 'all', 'left_own']:
                 q_check = QCheckmark(self.parent1, check='left', location=[OFFSET + 90 + 40, 395 + off], line=self.checkmarks[-1])
                 self.checkmarks[-1].append(q_check)
-            if c in ['all', 'left_own', 'right_own']:
+            if c in ['all', 'left_own', 'right_own', 'down']:
                 q_check = QCheckmark(self.parent1, check='down', location=[OFFSET + 90 + 40 + 20, 395 + off], line=self.checkmarks[-1])
                 self.checkmarks[-1].append(q_check)
             if c in ['right', 'both', 'all', 'right_own']:
@@ -127,6 +126,7 @@ class SidePane(QLabel):
             off += 20
 
     def set_card(self, index):
+        self.wonder = False
         self.index = index
 
         pixmap1 = QPixmap(f"cards/{index}.jpg").scaledToHeight(300)
