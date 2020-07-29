@@ -147,12 +147,19 @@ class SidePane(QLabel):
         chosen = ['none' for _ in self.checkmarks]
         for idx, line in enumerate(self.checkmarks):
             if len(line) == 1:
-                if line[0].highlighted is True:
+                if line[0].highlighted is True or line[0].check in ['none', 'own']:
                     chosen[idx] = line[0].check
             if len(line) == 2:
                 if line[0].highlighted is True:
                     chosen[idx] = line[0].check
                 if line[1].highlighted is True:
+                    chosen[idx] = line[1].check
+            if len(line) == 3:
+                if line[0].highlighted is True:
+                    chosen[idx] = line[0].check
+                if line[1].highlighted is True:
+                    chosen[idx] = line[1].check
+                if line[2].highlighted is True:
                     chosen[idx] = line[1].check
 
         return chosen
