@@ -147,10 +147,9 @@ class QText1(QLabel):
         my_font.setBold(True)
         self.setFont(my_font)
 
-        self.anim = None
-        self.animation = None
-
         self.move(location[0], location[1])
+        self.anim = QText2(self.parent1, location=(self.x(), self.y()), text='', color=color)
+        self.animation = QPropertyAnimation(self.anim, b"geometry")
         self.show()
 
     def set_animation(self, delta, new_value):
@@ -158,14 +157,16 @@ class QText1(QLabel):
             color = 'green'
         else:
             color = 'red'
-        self.anim = QText2(self.parent1, location=(self.x(), self.y()), text=f'{delta}', color=color)
-        self.show()
-        self.animation = QPropertyAnimation(self.anim, b"geometry")
+
+        # self.animation.stop()
+        self.anim.show()
+        self.anim.setText(f'{delta}')
+        self.anim.setStyleSheet(f'color: {color}; font-size: 25px;')
         self.animation.setDuration(1000)
         self.animation.setStartValue(QRect(self.x(), self.y() + 40, 30, 30))
         self.animation.setEndValue(QRect(self.x(), self.y(), 30, 30))
-        self.animation.finished.connect(lambda: self.anim.setParent(None))
         self.animation.finished.connect(lambda: self.setText(f'{new_value}'))
+        self.animation.finished.connect(lambda: self.anim.hide())
         self.animation.start()
 
 

@@ -179,7 +179,7 @@ class GameData:
         queue.append(data)
 
     def send_build_req(self, index, chosen, discard=False, wonder=False):
-        data = {'type': 'build', 'id': self.login, 'building': index, 'chosen': chosen, 'discard': discard}
+        data = {'type': 'build', 'id': self.login, 'building': index, 'chosen': chosen, 'discard': discard, 'wonder': wonder}
         queue.append(data)
 
     def send_get_move_req(self):
