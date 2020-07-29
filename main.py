@@ -86,7 +86,7 @@ class GameGUI(QDialog):
         game_data.send_get_move_req()
 
     def send_build_req(self):
-        game_data.send_build_req(self.pane.index, self.pane.get_chosen())
+        game_data.send_build_req(self.pane.index, self.pane.get_chosen(), wonder=self.pane.wonder)
         # self.big_widgets.start_waiting()
 
     def send_build_req_discard(self):
@@ -131,6 +131,9 @@ class GameGUI(QDialog):
     def show_discarded(self, discarded):
         discarded = QDiscarded(self, codes=discarded)
         print("Selected card:", discarded.selected)
+
+        card_id = discarded.selected
+        game_data.send_build_discarded(card_id)
 
     def update_game(self, index):
         print("Update game")

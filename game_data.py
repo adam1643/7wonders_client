@@ -128,7 +128,11 @@ class GameData:
         right_build = data.get('right_neighbor_built')
         money, military = data.get('money'), data.get('military')
         wins, loses = data.get('wins'), data.get('loses')
-        self.gui.new_move_signal.emit(player_build, left_build, right_build, [money, military, wins, loses])
+        discarded = data.get('discarded')
+        if discarded is True:
+            self.gui.show_discarded_signal.emit(1)
+        else:
+            self.gui.new_move_signal.emit(player_build, left_build, right_build, [money, military, wins, loses])
         print("Get move", data)
 
     def parse_end_age(self, data):
@@ -174,7 +178,7 @@ class GameData:
             data = {'type': 'get_data', 'id': self.login}
         queue.append(data)
 
-    def send_build_req(self, index, chosen, discard=False):
+    def send_build_req(self, index, chosen, discard=False, wonder=False):
         data = {'type': 'build', 'id': self.login, 'building': index, 'chosen': chosen, 'discard': discard}
         queue.append(data)
 
@@ -192,6 +196,10 @@ class GameData:
 
     def send_wonder_details_req(self, index):
         data = {'id': self.login, 'type': 'wonder_details', 'wonder_id': index}
+        queue.append(data)
+
+    def send_build_discarded(self, index):
+        data = {'id': self.login, 'type': 'build_discarded', 'card_id': index}
         queue.append(data)
 
     def send_end_age_req(self):

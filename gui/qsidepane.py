@@ -33,14 +33,19 @@ class SidePane(QLabel):
         self.button_wonder.move(OFFSET + 180, 350)
         self.button_wonder.setEnabled(True)
         self.button_wonder.setFixedSize(50, self.button_discard.height())
-        self.button_wonder.clicked.connect(lambda: self.parent1.set_wonder(1))
+        self.button_wonder.clicked.connect(lambda: self.request_wonder())
         self.button_wonder.show()
 
         self.resources = []
         self.checkmarks = []
         self.card = QLabel(self.parent1)
+        self.wonder = False
 
         self.upgrade_icon = QUpgradeIcon(self.parent1, location=[OFFSET + 130, 390 + 10])
+
+    def request_wonder(self):
+        self.parent1.set_wonder(1)
+        self.wonder = True
 
     def set_build_button_enabled(self, status):
         self.button_build.setEnabled(status)
@@ -49,6 +54,7 @@ class SidePane(QLabel):
         self.button_discard.setEnabled(status)
 
     def update_card_details(self, res, availability, upgrade=False):
+        self.wonder = False
         for resource, checkmarks in zip(self.resources, self.checkmarks):
             resource.setParent(None)
             resource.deleteLater()
