@@ -160,7 +160,7 @@ class SidePane(QLabel):
                 if line[1].highlighted is True:
                     chosen[idx] = line[1].check
                 if line[2].highlighted is True:
-                    chosen[idx] = line[1].check
+                    chosen[idx] = line[2].check
 
         return chosen
 
